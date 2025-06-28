@@ -18,7 +18,7 @@ from dataset.utils import (
     get_german_data,
 )
 from training import generate_proj_for_distance, train_models_for_dataset
-from verification import verify
+# from verification import verify
 
 RANDOM_SEED=42
 
@@ -348,40 +348,11 @@ if __name__ == '__main__':
             else:
                 raise ValueError(f'"{dataset_name}" is not a valid dataset name')
 
-            train_models_for_dataset(
+            model = train_models_for_dataset(
                 train_ds,
                 test_ds,
                 config=train_config,
             )
 
-    else:
-        tf.random.set_seed(RANDOM_SEED)
-
-        if experiment_name is not None:
-            mlflow.set_experiment(experiment_name)
-
-        args = []
-
-        for i, config in enumerate(VERIFICATION_CONFIGS):
-
-            models_dir = 'saved_models'
-
-            model_paths = os.listdir(models_dir)
-            model_paths = considered_paths(model_paths, from_date)
-
-            print(f'THESE ARE THE PATHS CONSIDERED: {model_paths}')
-
-            for j, model_path in enumerate(model_paths):
-
-                model_path = os.path.join(models_dir, model_path)
-                arg = (config, i, model_path, j, dry_run, experiment_name)
-                args.append((arg))
-
-        print(f'\n\VERIFICATION... VERIFIED 0/{len(args)}\n')
-
-        with Pool(NPROC) as p:
-            task_completed = 0
-            for i, _ in enumerate(p.imap(parallel_verify, args)):
-                task_completed += 1
-                print(f'\nVERIFIED MODEL {i+1}. VERIFIED {task_completed}/{len(args)} @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n')
+            print(model.summary())
 

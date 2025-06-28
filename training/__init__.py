@@ -108,8 +108,10 @@ def train_vanilla_model(train_ds, test_ds, config, should_save_model=True, save_
 # TODO: THERE IS NO NEED HERE FOR TRAIN AND TEST, BECAUSE WE SHOULD USE THIS WITH TRAIN DURING
 # TRAINING AND TEST DURING VERIFICATION
 def generate_proj_for_distance(
-    train_ds,
-    test_ds=None,
+    selected_sensitive_features,
+    sensitive_features,
+    X_train,
+    sensitive_dfs,
     config=None,
 ):
     fair_hyperplane_epochs = config['fair_hyperplane_epochs']
@@ -117,29 +119,27 @@ def generate_proj_for_distance(
     sens_reg = config['sensitive_reg']
 
     weights = []
-    for i, sensitive_feature in enumerate(train_ds.sensitive_features):
-        X_test = test_ds.X_df if test_ds is not None else None
-        y_test = test_ds.sensitive_dfs[i] if test_ds is not None else None
+    for i, sensitive_feature in enumerate(selected_sensitive_features):
 
-        if sensitive_feature in train_ds.sens_cat_cols:
+        if sensitive_feature in sensitive_features:
             w = learn_sensitive_hyperplane_cat(
-                train_ds.X_df,
-                train_ds.sensitive_dfs[i],
+                X_train,
+                sensitive_dfs[i],
                 epochs=fair_hyperplane_epochs,
                 regularizer=sens_reg,
                 batch_size=sens_batch_size,
-                X_test=X_test,
-                y_test=y_test,
+                X_test=None,
+                y_test=None,
             )
         else:
             w = learn_sensitive_hyperplane_num(
-                train_ds.X_df,
-                train_ds.sensitive_dfs[i],
+                X_train,
+                sensitive_dfs[i],
                 epochs=fair_hyperplane_epochs,
                 regularizer=sens_reg,
                 batch_size=sens_batch_size,
-                X_test=X_test,
-                y_test=y_test,
+                X_test=None,
+                y_test=None,
             )
         weights.append(w)
 
@@ -149,20 +149,25 @@ def generate_proj_for_distance(
 
 
 def train_individually_fair_subspace_robust_model(
-    train_ds,
-    test_ds,
+    selected_sensitive_features,
+    sensitive_features,
+    X_train,
+    y_train,
+    X_test, # = test_ds.X_df,
+    y_test, # = test_ds.y_df.values,
+    sensitive_dfs,
     config=None,
     save_directory=None,
 ):
     proj, sensitive_directions = generate_proj_for_distance(
-        train_ds, test_ds=test_ds, config=config)
+        selected_sensitive_features, sensitive_features, X_train, sensitive_dfs, config=config)
 
     if(config['training_MILP'] == False):
         print('TRAINING YUROCHKIN FAIR MODEL...')
-        weights, train_logits, test_logits, model = SenSR.train_fair_nn_binary(train_ds.X_df.values, train_ds.y_df.values, sensitive_directions, X_test=test_ds.X_df.values, y_test=test_ds.y_df.values, train_ds=train_ds, config=config, save_directory=save_directory)
+        weights, train_logits, test_logits, model = SenSR.train_fair_nn_binary(X_train.values, y_train.values, sensitive_directions, X_test=X_test.values, y_test=y_test.values, config=config, save_directory=save_directory)
     else:
         print('TRAINING MILP FAIR MODEL...')
-        weights, train_logits, test_logits, model = MILPSR.train_fair_nn_binary(train_ds.X_df.values, train_ds.y_df.values, sensitive_directions, X_test=test_ds.X_df.values, y_test=test_ds.y_df.values, train_ds=train_ds, config=config, save_directory=save_directory)
+        weights, train_logits, test_logits, model = MILPSR.train_fair_nn_binary(X_train.values, y_train.values, sensitive_directions, X_test=X_test.values, y_test=y_test.values, config=config, save_directory=save_directory)
 
     return weights, proj, model
 
@@ -175,7 +180,7 @@ def train_models_for_dataset(
 ):
     save_directory
     if config['debiased_training']:
-        _, _, model = train_individually_fair_subspace_robust_model(train_ds, test_ds, config, save_directory=save_directory)
+        _, _, model = train_individually_fair_subspace_robust_model(train_ds.sensitive_features, train_ds.sens_cat_cols, train_ds.X_df, train_ds.y_df, test_ds.X_df, test_ds.y_df, train_ds.sensitive_dfs, config, save_directory=save_directory)
     else:
         print('TRAINING VANILLA MODEL...')
         model = train_vanilla_model(train_ds, test_ds, config, save_directory=save_directory)

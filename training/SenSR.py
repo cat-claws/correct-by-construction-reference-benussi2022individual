@@ -21,7 +21,7 @@ GLOBAL_NPROC = 25 if cpu_count() > 10 else 4
 
 import sys
 sys.path.append("../verification")
-from verification.local_v import multiproc_veri
+# from verification.local_v import multiproc_veri
 
 def compl_svd_projector(names, svd=-1):
     if svd > 0:
@@ -295,38 +295,38 @@ def train_fair_nn_binary(X_train, y_train, sensitive_directions, X_test=None, y_
                         loss_after_subspace_attack = loss.eval(feed_dict={
                             tf_X: batch_x, tf_y: batch_y})
 
-                else:
-                    for adv_it in range(subspace_epoch):
-                        fair_step.run(feed_dict={
-                            tf_X: batch_x, tf_y: batch_y})
-                        loss_after_subspace_attack = loss.eval(feed_dict={
-                            tf_X: batch_x, tf_y: batch_y})
+                # else:
+                #     for adv_it in range(subspace_epoch):
+                #         fair_step.run(feed_dict={
+                #             tf_X: batch_x, tf_y: batch_y})
+                #         loss_after_subspace_attack = loss.eval(feed_dict={
+                #             tf_X: batch_x, tf_y: batch_y})
 
-                    model_weights = []
-                    global_weights = []
-                    for key in variables:
-                        var = np.asarray(variables[key].eval())
-                        model_weights.append(var)
-                        global_weights.append(var.tolist())
-                    nproc = GLOBAL_NPROC
-                    p = Pool(nproc)
-                    args = []
-                    sub_batch_size = int(batch_size/nproc)
-                    GLOBAL_KERAS_MODEL.set_weights(model_weights)
-                    for i in range(nproc):
-                        # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
-                        subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
-                        arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x)
-                        args.append((arg))
-                    batch_x_MILP = p.map(multiproc_veri, args)
-                    p.close()
-                    p.join()
-                    batch_x_MILP = np.asarray(batch_x_MILP)
-                    batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
-                    print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
+                #     model_weights = []
+                #     global_weights = []
+                #     for key in variables:
+                #         var = np.asarray(variables[key].eval())
+                #         model_weights.append(var)
+                #         global_weights.append(var.tolist())
+                #     nproc = GLOBAL_NPROC
+                #     p = Pool(nproc)
+                #     args = []
+                #     sub_batch_size = int(batch_size/nproc)
+                #     GLOBAL_KERAS_MODEL.set_weights(model_weights)
+                #     for i in range(nproc):
+                #         # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
+                #         subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
+                #         arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x)
+                #         args.append((arg))
+                #     batch_x_MILP = p.map(multiproc_veri, args)
+                #     p.close()
+                #     p.join()
+                #     batch_x_MILP = np.asarray(batch_x_MILP)
+                #     batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
+                #     print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
 
-                    loss_after_subspace_attack = loss.eval(feed_dict={
-                                tf_X: batch_x_MILP, tf_y: batch_y})
+                #     loss_after_subspace_attack = loss.eval(feed_dict={
+                #                 tf_X: batch_x_MILP, tf_y: batch_y})
 
                 ## Check result
                 if(loss_after_subspace_attack < loss_before_subspace_attack and not use_MILP):
@@ -346,37 +346,37 @@ def train_fair_nn_binary(X_train, y_train, sensitive_directions, X_test=None, y_
                             fair_loss_after_l2_attack = fair_loss.eval(feed_dict={
                                 tf_X: batch_x, tf_y: batch_y, tf_lamb: lamb})
 
-                    else:
-                        for full_adv_it in range(full_epoch):
-                            full_fair_step.run(feed_dict={
-                                tf_X: batch_x, tf_y: batch_y, tf_lamb: lamb})
-                            fair_loss_after_l2_attack = fair_loss.eval(feed_dict={
-                                tf_X: batch_x, tf_y: batch_y, tf_lamb: lamb})
+                    # # else:
+                    #     for full_adv_it in range(full_epoch):
+                    #         full_fair_step.run(feed_dict={
+                    #             tf_X: batch_x, tf_y: batch_y, tf_lamb: lamb})
+                    #         fair_loss_after_l2_attack = fair_loss.eval(feed_dict={
+                    #             tf_X: batch_x, tf_y: batch_y, tf_lamb: lamb})
 
-                        model_weights = []
-                        global_weights = []
-                        for key in variables:
-                            var = np.asarray(variables[key].eval())
-                            model_weights.append(var)
-                            global_weights.append(var.tolist())
-                        nproc = GLOBAL_NPROC
-                        p = Pool(nproc)
-                        args = []
-                        sub_batch_size = int(batch_size/nproc)
-                        GLOBAL_KERAS_MODEL.set_weights(model_weights)
-                        for i in range(nproc):
-                            # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
-                            subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
-                            arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x)
-                            args.append((arg))
-                        batch_x_MILP = p.map(multiproc_veri, args)
-                        p.close()
-                        p.join()
-                        batch_x_MILP = np.asarray(batch_x_MILP)
-                        batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
-                        print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
-                        fair_loss_after_l2_attack = fair_loss.eval(feed_dict={
-                                tf_X: batch_x_MILP, tf_y: batch_y, tf_lamb: lamb})
+                    #     model_weights = []
+                    #     global_weights = []
+                    #     for key in variables:
+                    #         var = np.asarray(variables[key].eval())
+                    #         model_weights.append(var)
+                    #         global_weights.append(var.tolist())
+                    #     nproc = GLOBAL_NPROC
+                    #     p = Pool(nproc)
+                    #     args = []
+                    #     sub_batch_size = int(batch_size/nproc)
+                    #     GLOBAL_KERAS_MODEL.set_weights(model_weights)
+                    #     for i in range(nproc):
+                    #         # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
+                    #         subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
+                    #         arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x)
+                    #         args.append((arg))
+                    #     batch_x_MILP = p.map(multiproc_veri, args)
+                    #     p.close()
+                    #     p.join()
+                    #     batch_x_MILP = np.asarray(batch_x_MILP)
+                    #     batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
+                    #     print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
+                    #     fair_loss_after_l2_attack = fair_loss.eval(feed_dict={
+                    #             tf_X: batch_x_MILP, tf_y: batch_y, tf_lamb: lamb})
                     ## Check result
                     if(fair_loss_after_l2_attack < fair_loss_before_l2_attack and not use_MILP):
                         print('WARNING: full attack failed: objective decreased from %f to %f; resetting the attack' % (fair_loss_before_l2_attack, fair_loss_after_l2_attack))

@@ -22,7 +22,7 @@ GLOBAL_NPROC = 10 #if cpu_count() > 10 else 4
 
 import sys
 sys.path.append("../verification")
-from verification.local_v import multiproc_veri
+# from verification.local_v import multiproc_veri
 
 def compl_svd_projector(names, svd=-1):
     if svd > 0:
@@ -301,18 +301,18 @@ def train_fair_nn_binary(X_train, y_train, sensitive_directions, X_test=None, y_
                         # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
                         subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
                         verification_proc_id = uuid.uuid4()
-                        arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, None, verification_proc_id)
-                        args.append((arg))
-                    batch_x_MILP = p.map(multiproc_veri, args)
-                    p.close()
-                    p.join()
-                    batch_x_MILP = np.asarray(batch_x_MILP)
-                    batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
+                    #     arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, None, verification_proc_id)
+                    #     args.append((arg))
+                    # batch_x_MILP = p.map(multiproc_veri, args)
+                    # p.close()
+                    # p.join()
+                    # batch_x_MILP = np.asarray(batch_x_MILP)
+                    # batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
 
-                    print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
+                    # print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
 
-                    loss_after_subspace_attack = loss.eval(feed_dict={
-                                tf_X: batch_x, tf_y: batch_y, tf_adv_X: batch_x_MILP})
+                    # loss_after_subspace_attack = loss.eval(feed_dict={
+                    #             tf_X: batch_x, tf_y: batch_y, tf_adv_X: batch_x_MILP})
 
                 if full_step > 0:
 
@@ -335,21 +335,21 @@ def train_fair_nn_binary(X_train, y_train, sensitive_directions, X_test=None, y_
                             # having nproc copies of train_ds makes me nervous about RAM usage bottlenecks, but it works for now
                             subbatch_idx = list(batch_idx[sub_batch_size*i:sub_batch_size*(i+1)])
                             verification_proc_id = uuid.uuid4()
-                            arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x, verification_proc_id)
-                            args.append((arg))
-                        batch_x_MILP = p.map(multiproc_veri, args)
-                        p.close()
-                        p.join()
-                        batch_x_MILP = np.asarray(batch_x_MILP)
-                        batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
-                        print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
-                        loss_after_l2_attack = loss.eval(feed_dict={
-                                tf_X: batch_x_MILP, tf_y: batch_y, tf_lamb: lamb, tf_adv_X: batch_x_MILP})
+                        #     arg = (train_ds, subbatch_idx,  proj_compl, epsilon, delta, opt_mode, time_limit, False, global_weights, batch_x, verification_proc_id)
+                        #     args.append((arg))
+                        # batch_x_MILP = p.map(multiproc_veri, args)
+                        # p.close()
+                        # p.join()
+                        # batch_x_MILP = np.asarray(batch_x_MILP)
+                        # batch_x_MILP = np.concatenate(batch_x_MILP, axis=0)
+                        # print("INFO BATCH RESULT: ", type(batch_x_MILP), batch_x_MILP.shape)
+                        # loss_after_l2_attack = loss.eval(feed_dict={
+                        #         tf_X: batch_x_MILP, tf_y: batch_y, tf_lamb: lamb, tf_adv_X: batch_x_MILP})
 
                 if(use_MILP is False):
                     adv_batch = tf_fair_X.eval(feed_dict={tf_X: batch_x})
-                else:
-                    adv_batch = batch_x_MILP
+                # else:
+                #     adv_batch = batch_x_MILP
 
                 if eps is not None:
                     # Here is their weird distributional loss thing that you were asking about
@@ -375,7 +375,7 @@ def train_fair_nn_binary(X_train, y_train, sensitive_directions, X_test=None, y_
                 ## Attack summary
                 if it > fair_start:
                     print('FAILED attacks: subspace %d; full %d; Nans after attack %d' % (failed_subspace_attack, failed_full_attack, failed_attack_count))
-                    print('Loss clean %f; subspace %f; full %f' % (loss_before_subspace_attack, loss_after_subspace_attack, loss_at_update))
+                    # print('Loss clean %f; subspace %f; full %f' % (loss_before_subspace_attack, loss_after_subspace_attack, loss_at_update))
 
         if y_train is not None:
             print('\nFinal train accuracy %g' % (accuracy.eval(feed_dict={
