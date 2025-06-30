@@ -1,13 +1,22 @@
 from training import train_individually_fair_subspace_robust_model
-
 import tensorflow as tf
 
 tf.compat.v1.disable_v2_behavior()
 tf.compat.v1.disable_eager_execution()
 
+import pandas as pd
+from dummies import one_hot_integer_columns
+
+df = pd.read_parquet("hf://datasets/cestwc/german-credit/data/train-00000-of-00001.parquet")
+df = one_hot_integer_columns(df)
+
+X_df = df.drop(['class'], axis=1)
+y_df = df[['class']]
+
+
 config = {
         'dataset_name': 'german',
-        'sensitive_features': ['personal status and sex'],
+        'sensitive_features': [x for x in X_df.columns if x.startswith('personal status and sex')],
         'training_goal': 'classification',
         'vanilla_epochs': 35,
         'fair_hyperplane_epochs': 20,
@@ -16,10 +25,10 @@ config = {
         'fair_epochs': 250,
         'fair_batch_size': 300,
         'reg': 0.005,
-        'n_units': [8, 16, 16],
+        'n_units': [64],
         'lr': 0.001,
-        'debiased_training': False,
-        'training_MILP': False,
+        'debiased_training': True,
+        'training_MILP': True,
         'epsilon': 0.2,
         'delta': 0.1,
         'lambda': 0.5,
@@ -29,12 +38,6 @@ config = {
     }
 
 
-import pandas as pd
-
-df = pd.read_parquet("hf://datasets/cestwc/german-credit/data/train-00000-of-00001.parquet")
-
-X_df = df.drop(['class'], axis=1)
-y_df = df[['class']]
 
 _, _, model = train_individually_fair_subspace_robust_model( [''], [''], X_df, y_df, X_df, y_df, [X_df[config['sensitive_features']]], config, save_directory=None)
 
